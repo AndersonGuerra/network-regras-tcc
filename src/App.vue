@@ -176,19 +176,27 @@ export default {
     network.on("click", this.getNode);
   },
   methods: {
+    getConnections(node) {
+      const connections = [];
+      for (let i = 0; i < this.rawEdges.length; i++) {
+        const rawEdge = this.rawEdges[i];
+        if (rawEdge.from === node && !connections.includes(rawEdge.to)) {
+          connections.push(rawEdge.to);
+        } else if (rawEdge.to === node && !connections.includes(rawEdge.from)) {
+          connections.push(rawEdge.from);
+        }
+      }
+      return connections;
+    },
     getNode(params) {
       if (params.nodes.length === 1) {
         const node = params.nodes[0];
-        const connections = this.rawEdges.filter((e) => e.from === node);
+        const connections = this.getConnections(node);
         const data = {
           node,
-          connections: [],
+          connections,
         };
-        connections.forEach((c) => {
-          data.connections.push(c.to);
-        });
         this.selectedNode = data;
-        console.log(connections, connections.length);
       }
     },
   },
