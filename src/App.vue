@@ -1,20 +1,24 @@
 <template>
-  <div id="app">
+  <div class="container" id="app">
     <div id="network"></div>
     <div>
       <h1>Conexões</h1>
       <div v-if="selectedNode.node">
-        <p>Regra Selecionada: {{ selectedNode.node }}</p>
-        <p>
-          Conexões:
-          <span
+        <h3>
+          Regra Selecionada: <strong>{{ selectedNode.node }}</strong>
+        </h3>
+        <h3>
+          Conexões da regra <strong>{{ selectedNode.node }} </strong>:
+        </h3>
+        <div class="row">
+          <div
+            class="col"
             v-for="(connection, index) in selectedNode.connections"
             :key="index"
           >
-            {{ connection
-            }}<span v-if="index != selectedNode.connections.length - 1">,</span>
-          </span>
-        </p>
+            <subconnection-card :connection="connection" />
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -23,9 +27,10 @@
 <script>
 import { Network } from "vis-network/peer/esm/vis-network";
 import { DataSet } from "vis-data/peer/esm/vis-data";
+import SubconnectionCard from "./components/SubconnectionCard.vue";
 export default {
   name: "App",
-  components: {},
+  components: { SubconnectionCard },
   data() {
     return {
       rawEdges: null,
@@ -186,14 +191,21 @@ export default {
           connections.push(rawEdge.from);
         }
       }
-      return connections;
+      return connections.map((e) => e.toUpperCase());
     },
     getNode(params) {
       if (params.nodes.length === 1) {
         const node = params.nodes[0];
-        const connections = this.getConnections(node);
+        let connections = this.getConnections(node);
+        connections = connections.map((e) => {
+          const subconnections = this.getConnections(e.toLowerCase());
+          return {
+            node: e,
+            connections: subconnections,
+          };
+        });
         const data = {
-          node,
+          node: node.toUpperCase(),
           connections,
         };
         this.selectedNode = data;
@@ -209,4 +221,5 @@ export default {
   height: 480px;
   border: 1px solid lightgrey;
 }
+@import "~bootstrap/dist/css/bootstrap.css";
 </style>
