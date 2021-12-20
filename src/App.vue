@@ -1,36 +1,17 @@
 <template>
   <div class="container" id="app">
-    <div id="network"></div>
-    <div>
-      <h1>Conexões</h1>
-      <div v-if="selectedNode.node">
-        <h3>
-          Regra Selecionada: <strong>{{ selectedNode.node }}</strong>
-        </h3>
-        <h3>
-          Conexões da regra <strong>{{ selectedNode.node }} </strong>:
-        </h3>
-        <div class="row">
-          <div
-            class="col"
-            v-for="(connection, index) in selectedNode.connections"
-            :key="index"
-          >
-            <subconnection-card :connection="connection" />
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="mb-3" id="network"></div>
+    <mainconnection-card :selectedNode="selectedNode" />
   </div>
 </template>
 
 <script>
 import { Network } from "vis-network/peer/esm/vis-network";
 import { DataSet } from "vis-data/peer/esm/vis-data";
-import SubconnectionCard from "./components/SubconnectionCard.vue";
+import MainconnectionCard from "./components/MainconnectionCard.vue";
 export default {
   name: "App",
-  components: { SubconnectionCard },
+  components: { MainconnectionCard },
   data() {
     return {
       rawEdges: null,
