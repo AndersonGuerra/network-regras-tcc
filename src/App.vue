@@ -1,6 +1,6 @@
 <template>
   <div class="container" id="app">
-    <div class="mb-3" id="network"></div>
+    <div class="mb-3 mt-3" id="network"></div>
     <mainconnection-card :selectedNode="selectedNode" />
   </div>
 </template>
