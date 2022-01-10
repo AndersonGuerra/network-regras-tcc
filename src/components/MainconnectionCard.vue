@@ -2,7 +2,9 @@
   <div>
     <div class="card mb-3" v-if="selectedNode.node">
       <div class="card-body">
-        <h3 class="card-title">{{ selectedNode.node }}</h3>
+        <h3 class="card-title">
+          {{ selectedNode.node }}: {{ selectedNode.description }}
+        </h3>
         <h4 class="card-subtitle mb-2 text-muted">
           Conexões de {{ selectedNode.node }}:
         </h4>

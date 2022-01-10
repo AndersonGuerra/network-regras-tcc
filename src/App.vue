@@ -1,6 +1,17 @@
 <template>
   <div class="container" id="app">
     <div class="mb-3 mt-3" id="network"></div>
+    <div class="form-group">
+      <div class="row">
+        <label for="exampleFormControlFile1">Escolha uma planilha</label>
+      </div>
+      <input
+        @change="selectFile"
+        type="file"
+        class="form-control-file"
+        id="exampleFormControlFile1"
+      />
+    </div>
     <mainconnection-card :selectedNode="selectedNode" />
   </div>
 </template>
@@ -9,159 +20,89 @@
 import { Network } from "vis-network/peer/esm/vis-network";
 import { DataSet } from "vis-data/peer/esm/vis-data";
 import MainconnectionCard from "./components/MainconnectionCard.vue";
+import xlsx from "xlsx";
+const reader = new FileReader();
+
 export default {
   name: "App",
   components: { MainconnectionCard },
   data() {
     return {
+      workbook: null,
       rawEdges: null,
+      rulesNumbers: null,
       selectedNode: {},
     };
   },
-  mounted() {
-    const rulesNumbers = [
-      1, 2, 10, 13, 16, 17, 18, 19, 20, 21, 22, 23, 26, 28, 29, 30, 31, 32, 33,
-      34, 40, 41, 42, 43, 44, 46, 47, 48, 49, 51, 53, 55, 59, 60, 61, 63, 64,
-      65, 66, 70, 71, 73, 75, 84, 85,
-    ];
-    const nodes = new DataSet(
-      rulesNumbers.map((e) => {
-        return {
-          id: `r${e}`,
-          label: `Regra ${e}`,
+  watch: {
+    workbook: function (val) {
+      if (val !== null) {
+        const sheet1Name = this.workbook.SheetNames[0];
+        const sheet1 = xlsx.utils.sheet_to_json(
+          this.workbook.Sheets[sheet1Name]
+        );
+        const sheet2Name = this.workbook.SheetNames[1];
+        const sheet2 = xlsx.utils.sheet_to_json(
+          this.workbook.Sheets[sheet2Name]
+        );
+        const rawEdges = [];
+        const rulesNumbers = [];
+        for (let i = 0; i < sheet1.length; i++) {
+          const linha = sheet1[i];
+          const regra = linha["__EMPTY"];
+          for (let coluna in linha) {
+            if (coluna !== "__EMPTY" && regra !== coluna) {
+              rawEdges.push({
+                from: regra,
+                to: coluna,
+              });
+            }
+          }
+          if (linha["__EMPTY"] !== undefined) {
+            const description = sheet2.filter((e) => e.ID === linha["__EMPTY"]);
+            rulesNumbers.push({
+              id: linha["__EMPTY"],
+              label: `Regra ${linha["__EMPTY"]}`,
+              description:
+                description.length > 0 ? description[0]["DESCRIÇÃO"] : "",
+            });
+          }
+        }
+        this.rulesNumbers = rulesNumbers;
+        this.rawEdges = rawEdges;
+        const refinedEdges = [];
+        const container = document.getElementById("network");
+        for (let i = 0; i < rawEdges.length; i++) {
+          const edge = rawEdges[i];
+          const repeated = refinedEdges.filter((e) => {
+            if (e.to === edge.from && e.from === edge.to) return true;
+            else return false;
+          });
+          if (repeated.length === 0) refinedEdges.push(edge);
+        }
+        const nodes = new DataSet(rulesNumbers);
+        const edges = new DataSet(refinedEdges);
+        const data = {
+          nodes,
+          edges,
         };
-      })
-    );
-    const rawEdges = [
-      { from: "r1", to: "r2" },
-      { from: "r1", to: "r26" },
-      { from: "r1", to: "r41" },
-      { from: "r2", to: "r1" },
-      { from: "r2", to: "r26" },
-      { from: "r2", to: "r41" },
-      { from: "r10", to: "r21" },
-      { from: "r13", to: "r18" },
-      { from: "r13", to: "r34" },
-      { from: "r16", to: "r17" },
-      { from: "r17", to: "r16" },
-      { from: "r18", to: "r13" },
-      { from: "r19", to: "r40" },
-      { from: "r19", to: "r55" },
-      { from: "r20", to: "r21" },
-      { from: "r20", to: "r22" },
-      { from: "r20", to: "r63" },
-      { from: "r21", to: "r20" },
-      { from: "r21", to: "r63" },
-      { from: "r22", to: "r20" },
-      { from: "r22", to: "r21" },
-      { from: "r22", to: "r63" },
-      { from: "r23", to: "r84" },
-      { from: "r23", to: "r85" },
-      { from: "r26", to: "r1" },
-      { from: "r26", to: "r2" },
-      { from: "r26", to: "r55" },
-      { from: "r28", to: "r40" },
-      { from: "r29", to: "r40" },
-      { from: "r29", to: "r73" },
-      { from: "r29", to: "r75" },
-      { from: "r30", to: "r40" },
-      { from: "r31", to: "r32" },
-      { from: "r31", to: "r51" },
-      { from: "r31", to: "r53" },
-      { from: "r32", to: "r31" },
-      { from: "r32", to: "r51" },
-      { from: "r32", to: "r53" },
-      { from: "r33", to: "r34" },
-      { from: "r34", to: "r13" },
-      { from: "r34", to: "r33" },
-      { from: "r40", to: "r19" },
-      { from: "r40", to: "r20" },
-      { from: "r40", to: "r21" },
-      { from: "r40", to: "r22" },
-      { from: "r40", to: "r28" },
-      { from: "r40", to: "r29" },
-      { from: "r40", to: "r30" },
-      { from: "r41", to: "r1" },
-      { from: "r41", to: "r2" },
-      { from: "r42", to: "r40" },
-      { from: "r43", to: "r47" },
-      { from: "r44", to: "r18" },
-      { from: "r44", to: "r34" },
-      { from: "r44", to: "r40" },
-      { from: "r44", to: "r42" },
-      { from: "r46", to: "r18" },
-      { from: "r46", to: "r42" },
-      { from: "r46", to: "r44" },
-      { from: "r47", to: "r41" },
-      { from: "r47", to: "r42" },
-      { from: "r47", to: "r43" },
-      { from: "r47", to: "r44" },
-      { from: "r47", to: "r46" },
-      { from: "r47", to: "r49" },
-      { from: "r48", to: "r40" },
-      { from: "r48", to: "r47" },
-      { from: "r49", to: "r47" },
-      { from: "r51", to: "r31" },
-      { from: "r51", to: "r32" },
-      { from: "r51", to: "r53" },
-      { from: "r53", to: "r31" },
-      { from: "r53", to: "r32" },
-      { from: "r53", to: "r51" },
-      { from: "r55", to: "r19" },
-      { from: "r55", to: "r26" },
-      { from: "r55", to: "r59" },
-      { from: "r59", to: "r55" },
-      { from: "r60", to: "r40" },
-      { from: "r60", to: "r47" },
-      { from: "r61", to: "r47" },
-      { from: "r63", to: "r20" },
-      { from: "r63", to: "r21" },
-      { from: "r63", to: "r22" },
-      { from: "r64", to: "r20" },
-      { from: "r64", to: "r21" },
-      { from: "r64", to: "r22" },
-      { from: "r64", to: "r40" },
-      { from: "r64", to: "r63" },
-      { from: "r65", to: "r20" },
-      { from: "r65", to: "r21" },
-      { from: "r65", to: "r22" },
-      { from: "r65", to: "r40" },
-      { from: "r65", to: "r63" },
-      { from: "r66", to: "r65" },
-      { from: "r70", to: "r26" },
-      { from: "r70", to: "r55" },
-      { from: "r71", to: "r22" },
-      { from: "r71", to: "r63" },
-      { from: "r73", to: "r29" },
-      { from: "r73", to: "r75" },
-      { from: "r75", to: "r29" },
-      { from: "r75", to: "r73" },
-      { from: "r84", to: "r23" },
-      { from: "r84", to: "r85" },
-      { from: "r85", to: "r23" },
-      { from: "r85", to: "r84" },
-    ];
-    this.rawEdges = rawEdges;
-    const refinedEdges = [];
-    for (let i = 0; i < rawEdges.length; i++) {
-      const edge = rawEdges[i];
-      const repeated = refinedEdges.filter((e) => {
-        if (e.to === edge.from && e.from === edge.to) return true;
-        else return false;
-      });
-      if (repeated.length === 0) refinedEdges.push(edge);
-    }
-    const edges = new DataSet(refinedEdges);
-    const container = document.getElementById("network");
-    const data = {
-      nodes,
-      edges,
-    };
-    const options = {};
-    const network = new Network(container, data, options);
-    network.on("click", this.getNode);
+        const options = {};
+        const network = new Network(container, data, options);
+        network.on("click", this.getNode);
+      }
+    },
   },
+  created() {
+    reader.onload = (e) => {
+      const data = e.target.result;
+      this.workbook = xlsx.read(data, { type: "binary" });
+    };
+  },
+  mounted() {},
   methods: {
+    selectFile(event) {
+      reader.readAsBinaryString(event.target.files[0]);
+    },
     getConnections(node) {
       const connections = [];
       for (let i = 0; i < this.rawEdges.length; i++) {
@@ -172,22 +113,26 @@ export default {
           connections.push(rawEdge.from);
         }
       }
-      return connections.map((e) => e.toUpperCase());
+      return connections;
     },
     getNode(params) {
       if (params.nodes.length === 1) {
         const node = params.nodes[0];
-        let connections = this.getConnections(node);
+        let connections = this.getConnections(node).filter(
+          (e) => e !== undefined
+        );
         connections = connections.map((e) => {
-          const subconnections = this.getConnections(e.toLowerCase());
+          const subconnections = this.getConnections(e);
           return {
             node: e,
             connections: subconnections,
           };
         });
+        const nodeDetails = this.rulesNumbers.filter((e) => e.id === node);
         const data = {
-          node: node.toUpperCase(),
+          node: node,
           connections,
+          description: nodeDetails.length > 0 ? nodeDetails[0].description : "",
         };
         this.selectedNode = data;
       }
